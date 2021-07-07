@@ -49,6 +49,8 @@ public:
   // Initialize weights
   void initWeights();
 
+  // update step
+  long int step;
   // Number of networs
   int m_nnetworks;
   // whether multiple networks are heterogeneous of not
@@ -111,6 +113,8 @@ public:
   int* m_neurontype;
   // normalization phase: 0=do nothing, 1=store data
   int m_normphase;
+  // the noise vector
+  double* m_noisevector;
   // set the normaliztaion phase
   void normphase(int phase);
   // update normalization vectors

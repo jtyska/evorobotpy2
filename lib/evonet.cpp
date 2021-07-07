@@ -42,7 +42,7 @@
  * wInit            the weights initialization method 0=xavier 1=norm incoming 2=uniform
  * clip             whether observation are clipped in the range [-5.0, 5.0]
  * normalize        whether the oservations are normalized (see [1])
- * randAct          the type of noise applied to motor neurons 0-nonoise 1=gaussian 2=gaussian-parametric (as in diagonal gaussian policy)
+ * randAct          the type of noise applied to motor neurons 0-nonoise 1=gaussian 2=gaussian-parametric (as in diagonal gaussian policy),3=generalized-state dependent
  * randActR         the range of uniform noise [used only when randact=1]
  * wrange           the range of weights initailization [used only when wInit=2]
  * nbins            if difefrent from 1, number of bins used to encode motors (see [1])
@@ -147,8 +147,8 @@ Evonet::Evonet()
   m_wInit = 0;     // weights initialization mode, 0=xavier 1=norm incoming 2=uniform (default 0)
   m_clip = 0;      // whether we clip observation in [-5,5] (default 0)
   m_normalize = 0; // whether or not the input observations are normalized (default 1)
-  m_randAct = 0;   // action noise 0=none, 1=gaussian 2=gaussian-parametric (default 0)
-  m_wrange = 1.0;  // action noise range (default 0.01)
+  m_randAct = 0;   // action noise 0=none, 1=gaussian 2=gaussian-parametric (default 0), 3 = generalized state dependent
+  m_wrange = 1.0;  // action noise magnitude (default 1.0)
   m_nbins = 1;     // whether actions are encoded in bins
   m_low = -1.0;    // minimum value for observations and actions
   m_high = 1.0;    // maximum value for observations and actions
@@ -291,7 +291,7 @@ Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int 
     m_clip = 0;
   if (m_clip == 1)
     printf("clip ");
-  if (m_randAct < 0 || m_randAct > 2)
+  if (m_randAct < 0 || m_randAct > 3)
     m_randAct = 0;
   switch (m_randAct)
     {
@@ -301,12 +301,19 @@ Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int 
        case 2:
          printf("diagonal gaussian ");
          break;
-    }  
+       case 3:
+         printf("generalized state dependent noise (magnitude %.2f) ", randActR);
+         break;
+    }
   printf("\n");
     
   // allocate variables
   m_nblocks = 0;
   m_netinput = new double[m_nneurons]; // DEBUG ALREADY ALLOCATE IN THE FUNCTION ABOVE
+  if (m_randAct == 2)
+    m_noisevector = new double[m_noutputs];
+  if (m_randAct == 3)
+    m_noisevector = new double[m_nhiddens];
 
   // states required for LSTM networks
   if (m_netType == 3)
@@ -615,6 +622,7 @@ void Evonet::resetNet()
               *neurs = 0.0;
          }
      }
+   step = 0;
 }
 
 
@@ -638,7 +646,28 @@ void Evonet::updateNet()
   int j;
   int n;
   double lstm[4]; // gates: forget, input, output, gate-gate
- 
+	
+  // update the noise vector (every 10 steps)
+  if (m_randAct == 2)
+   {
+    //if (step == 0 || (step % 10) == 0)   // 10 steps
+    if (netRng->getInt(0, 10) == 0)    // 1/10% steps
+     for (i=0, p = (cgenotype +  m_nparams - m_noutputs); i < m_noutputs; i++, p++)
+      {
+        m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(*p); // * m_randActR;
+        //printf("noise %.2f \n", exp(*p));
+	  }
+   }
+  if (m_randAct == 3)
+   {
+    if (step == 0 || (step % 10) == 0)
+    for (i=0, p = (cgenotype +  m_nparams - m_nhiddens); i < m_nhiddens; i++, p++)
+      {
+        m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(*p); // * m_randActR;
+        //printf("noise %.2f \n", exp(*p));
+	  }
+   }
+  step += 1;
  
   if (m_heterogeneous == 1)
     p = cgenotype;
@@ -780,6 +809,9 @@ void Evonet::updateNet()
                            *a = -1.0;
                          break;
                     }
+                // we add generalized state dependent noise on hiddens
+				if (m_randAct == 3 && t >= m_ninputs && t < (m_ninputs + m_nhiddens))
+				  *a += m_noisevector[t-m_ninputs];
                 }
             }
             nbl = (nbl + 5);
@@ -803,8 +835,14 @@ void Evonet::updateNet()
                     break;
                   // gaussian noise with parametric range (diagonal-gaussian), the range of noise depends on parameters adapted together with the connection weights
                   case 2:
-                    cact[i] = neurona[m_ninputs + m_nhiddens + i] + (netRng->getGaussian(1.0, 0.0) * exp(*p));
+                    //cact[i] = neurona[m_ninputs + m_nhiddens + i] + (netRng->getGaussian(1.0, 0.0) * exp(*p));  // classic
+                    cact[i] = neurona[m_ninputs + m_nhiddens + i] + m_noisevector[i];  // every N steps
+                    //if (step == 1) printf("noise %.2f \n", exp(*p));
                     p++;
+                    break;
+                  // generalized state dependent noise
+                  case 3:
+                    cact[i] = neurona[m_ninputs + m_nhiddens + i];
                     break;
                 }
             }
@@ -873,9 +911,12 @@ int Evonet::computeParameters()
       nbl = (nbl + 5);
     }
  
-  // parametrized gaussian noise on action 
+  // parametrized gaussian noise on action
   if (m_randAct == 2)
     nparams += m_noutputs;
+  // generalized state dependent noise (on hiddens)
+  if (m_randAct == 3)
+    nparams += m_nhiddens;
 
   // heterogenoeus network have different parameters for each network
   if (m_heterogeneous == 1)
@@ -1057,6 +1098,15 @@ void Evonet::initWeights()
     if (m_randAct == 2)
       {
         for (i=0; i < m_noutputs; i++)
+          {
+            cgenotype[j] = 0.0;
+            j++;
+          }
+      }
+    // parameters for the generalized state dependent noise
+    if (m_randAct == 3)
+      {
+        for (i=0; i < m_nhiddens; i++)
           {
             cgenotype[j] = 0.0;
             j++;
