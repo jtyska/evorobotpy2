@@ -653,8 +653,11 @@ void Evonet::updateNet()
     //if (step == 0 || (step % 10) == 0)   // 10 steps
     if (netRng->getInt(0, 10) == 0)    // 1/10% steps
      for (i=0, p = (cgenotype +  m_nparams - m_noutputs); i < m_noutputs; i++, p++)
-      { if(*p<0.15)
+      { 
+        printf("Noise before clip (p) on output %i = %f\n",i,*p);
+        if(*p<0.15)
            *p=0.15;
+        printf(" ---> Noise (p) after clip on output %i = %f\n",i,*p);
         m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(*p); // * m_randActR;
         //printf("noise %.2f \n", exp(*p));
 	  }
