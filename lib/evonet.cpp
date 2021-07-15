@@ -645,22 +645,28 @@ void Evonet::updateNet()
   int* nt;
   int j;
   int n;
+  float noiseP;
   double lstm[4]; // gates: forget, input, output, gate-gate
 	
   // update the noise vector (every 10 steps)
   if (m_randAct == 2)
    {
-    //if (step == 0 || (step % 10) == 0)   // 10 steps
-    if (netRng->getInt(0, 10) == 0)    // 1/10% steps
-     for (i=0, p = (cgenotype +  m_nparams - m_noutputs); i < m_noutputs; i++, p++)
-      { 
-        printf("Noise before clip (p) on output %i = %f\n",i,*p);
-        if(*p<0.15)
-           *p=0.15;
-        printf(" ---> Noise (p) after clip on output %i = %f\n",i,*p);
-        m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(*p); // * m_randActR;
-        //printf("noise %.2f \n", exp(*p));
-	  }
+    //if (step == 0 || (step % 10) == 0)   // 10 steps    
+    if (netRng->getInt(0, 10) == 0){    // 1/10% steps 
+      //printf("[");    
+      for (i=0, p = (cgenotype +  m_nparams - m_noutputs); i < m_noutputs; i++, p++)
+        { 
+          //printf("Noise before clip (p) on output %i = %f\n",i,*p);
+          noiseP = *p;
+          if(noiseP<-1.5)
+            noiseP=-1.5;        
+          //printf(" ---> Noise (p) after clip on output %i = %f\n",i,*p);
+          //printf("%f,",i,*p);
+          m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(noiseP); // * m_randActR;
+          //printf("noise %.2f \n", exp(*p));
+        }
+        //printf("],\n");
+    }
    }
   if (m_randAct == 3)
    {
