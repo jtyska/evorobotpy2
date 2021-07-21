@@ -658,8 +658,8 @@ void Evonet::updateNet()
         { 
           //printf("Noise before clip (p) on output %i = %f\n",i,*p);
           noiseP = *p;
-          if(noiseP<-1.5)
-            noiseP=-1.5;        
+          if(noiseP<-1.2)
+            noiseP=-1.2;        
           //printf(" ---> Noise (p) after clip on output %i = %f\n",i,*p);
           //printf("%f,",i,*p);
           m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(noiseP); // * m_randActR;
