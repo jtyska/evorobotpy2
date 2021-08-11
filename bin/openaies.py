@@ -26,6 +26,8 @@ import configparser
 class Algo(EvoAlgo):
     def __init__(self, env, policy, seed, fileini, filedir):
         EvoAlgo.__init__(self, env, policy, seed, fileini, filedir)
+        self.ievReg = []
+        self.cvReg = []
 
     def loadhyperparameters(self):
 
@@ -88,6 +90,7 @@ class Algo(EvoAlgo):
         self.nparams = len(self.center)          # number of adaptive parameters
         self.cgen = 0                            # currrent generation
         self.samplefitness = zeros(self.batchSize * 2) # the fitness of the samples
+        self.samplefitness2 = zeros(self.batchSize * 2) # the fitness of the samples during the re-test used to compute the iav measure
         self.samples = None                      # the random samples
         self.m = zeros(self.nparams)             # Adam: momentum vector 
         self.v = zeros(self.nparams)             # Adam: second momentum vector (adam)
@@ -110,6 +113,7 @@ class Algo(EvoAlgo):
         fp.write('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f bestsam %.2f avgfit %.2f paramsize %.2f \n' %
              (self.seed, self.steps / float(self.maxsteps) * 100, self.cgen, self.steps / 1000000, self.bestfit, self.bestgfit, self.bfit, self.avgfit, self.avecenter))
         fp.close()
+
  
     def evaluate(self):
         cseed = self.seed + self.cgen * self.batchSize  # Set the seed for current generation (master and workers have the same seed)
@@ -130,6 +134,11 @@ class Algo(EvoAlgo):
                 eval_rews, eval_length = self.policy.rollout(self.policy.ntrials, seed=(self.seed + (self.cgen * self.batchSize) + b))
                 self.samplefitness[b*2+bb] = eval_rews
                 self.steps += eval_length
+
+                # we re-evaluate the individuals to estimate the iav measure
+                if (((self.cgen - 1) % 10) == 0):
+                    eval_rews, eval_length = self.policy.rollout(self.policy.ntrials, seed=(self.seed + (self.cgen * self.batchSize) + b + 999))  
+                    self.samplefitness2[b*2+bb] = eval_rews
 
         fitness, self.index = ascendent_sort(self.samplefitness)       # sort the fitness
         self.avgfit = np.average(fitness)                         # compute the average fitness                   
@@ -163,7 +172,25 @@ class Algo(EvoAlgo):
                 self.steps += eval_length
             gfit /= self.policy.nttrials    
             self.updateBestg(gfit, self.bestsol)
-
+            
+        # we compute the iev measure
+        if (((self.cgen - 1) % 10) == 0):
+           fitness2, index2 = ascendent_sort(self.samplefitness2)
+           popsize = self.batchSize * 2
+           utilities = zeros(popsize)
+           utilities2 = zeros(popsize)
+           for i in range(popsize):
+              utilities[self.index[i]] = i
+           utilities /= (popsize - 1)
+           for i in range(popsize):
+              utilities2[index2[i]] = i
+           utilities2 /= (popsize - 1)
+           iev = 0
+           for i in range(popsize):
+               iev += abs(utilities[i] - utilities2[i])
+            
+           print(f" =*=*=* GEN {self.cgen} - IEV = {iev/popsize} =*=*=*")
+           self.ievReg.append(iev/popsize)
 
     def optimize(self):
             
@@ -214,15 +241,35 @@ class Algo(EvoAlgo):
         elapsed = 0
         self.steps = 0
         print("Salimans: seed %d maxmsteps %d batchSize %d stepsize %lf noiseStdDev %lf wdecay %d symseed %d nparams %d" % (self.seed, self.maxsteps / 1000000, self.batchSize, self.stepsize, self.noiseStdDev, self.wdecay, self.symseed, self.nparams))
-
+        self.policy.nn.setMinParamNoise(-0.5)
         while (self.steps < self.maxsteps):
 
-            
             self.evaluate()                           # evaluate samples  
             
             self.optimize()                           # estimate the gradient and move the centroid in the gradient direction
 
             self.stat = np.append(self.stat, [self.steps, self.bestfit, self.bestgfit, self.bfit, self.avgfit, self.avecenter])  # store performance across generations
+
+            if len(self.stat)>=30:
+                lastFive = self.stat[-26:-1:6]
+                meanLF = np.mean(lastFive)
+                stdLF = np.std(lastFive)
+                cv = stdLF/meanLF;
+                averageZ = np.mean([(x-meanLF)/stdLF for x in lastFive])                                
+                #print(f"Best generation fitness on last five generations={lastFive}")
+                #print(f"Average = {meanLF}; Std = {stdLF}; CV={stdLF/meanLF}; averageZ={averageZ}")                 
+                multiplier=1
+                if (cv < 0.1): #too few variation - increasing it
+                    multiplier=1.1
+                elif (cv>0.2): #too much variation - reducing it
+                    multiplier=0.9
+
+                self.policy.env.robot.randInitLow*=multiplier
+                self.policy.env.robot.randInitHigh*=multiplier                         
+                
+                print(f"Fitness Cofficient of Variation (CV) = {cv} - Environmental variation = {self.policy.env.robot.randInitLow},{self.policy.env.robot.randInitHigh}")
+                if (((self.cgen - 1) % 10) == 0):
+                    self.cvReg.append(cv)
 
             if ((time.time() - last_save_time) > (self.saveeach * 60)):
                 self.savedata()                       # save data on files
@@ -232,10 +279,18 @@ class Algo(EvoAlgo):
                 self.policy.nn.updateNormalizationVectors()  # update the normalization vectors with the new data collected
                 self.normalizationdatacollected = False
 
-            print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f bestsam %.2f avg %.2f weightsize %.2f' %
-                      (self.seed, self.steps / float(self.maxsteps) * 100, self.cgen, self.steps / 1000000, self.bestfit, self.bestgfit, self.bfit, self.avgfit, self.avecenter))
+            completion = self.steps / float(self.maxsteps)*100;
+            if completion>30 and completion<60:
+                self.policy.nn.setMinParamNoise(-1)
+            elif completion >=60:
+                self.policy.nn.setMinParamNoise(-3)
 
-        self.savedata()                           # save data at the end of evolution
+            print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f bestsam %.2f avg %.2f weightsize %.2f minParamNoise %.2f' %
+                      (self.seed, completion, self.cgen, self.steps / 1000000, self.bestfit, self.bestgfit, self.bfit, self.avgfit, self.avecenter,self.policy.nn.getMinParamNoise()))
+
+        self.savedata()# save data at the end of evolution
+        np.save(self.filedir + "/S" + str(self.seed) + ".iev",self.ievReg)
+        np.save(self.filedir + "/S" + str(self.seed) + ".cv",self.cvReg)
 
         # print simulation time
         end_time = time.time()

@@ -24,6 +24,8 @@ cdef extern from "evonet.h":
         double* m_act
         double* m_netinput
         void resetNet()
+        void setMinParamNoise(double v)
+        double getMinParamNoise()
         void seed(int s)
         void copyGenotype(double* genotype)
         void copyInput(float* input)

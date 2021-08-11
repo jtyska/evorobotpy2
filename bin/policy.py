@@ -186,7 +186,7 @@ class BulletPolicy(Policy):
     def __init__(self, env, filename, seed, test):
         self.ninputs = env.observation_space.shape[0]      # only works for problems with continuous observation space
         self.noutputs = env.action_space.shape[0]          # only works for problems with continuous action space
-        Policy.__init__(self, env, filename, seed, test)                            
+        Policy.__init__(self, env, filename, seed, test)
     
     def rollout(self, ntrials, render=False, seed=None):   # evaluate the policy for one or more episodes 
         rews = 0.0                      # summed reward
@@ -197,7 +197,7 @@ class BulletPolicy(Policy):
             import renderWorld
         if seed is not None:
             self.env.seed(seed)          # set the seed of the environment that impacts on the initialization of the robot/environment
-            self.nn.seed(seed)           # set the seed of evonet that impacts on the noise eventually added to the activation of the neurons
+            self.nn.seed(seed)           # set the seed of evonet that impacts on the noise eventually added to the activation of the neurons        
         for trial in range(ntrials):
             self.ob = self.env.reset()   # reset the environment
             self.nn.resetNet()           # reset the activation of the neurons (necessary for recurrent policies)

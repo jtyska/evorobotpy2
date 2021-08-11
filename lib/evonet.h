@@ -115,6 +115,8 @@ public:
   int m_normphase;
   // the noise vector
   double* m_noisevector;
+  //mininum value of parametric noise allowed
+  double m_minParamNoise;
   // set the normaliztaion phase
   void normphase(int phase);
   // update normalization vectors
@@ -123,6 +125,9 @@ public:
   void setNormalizationVectors();
   // reset normalization vectors
   void resetNormalizationVectors();
+  
+  double getMinParamNoise();
+  void setMinParamNoise(double v); 
 
 private:
   // Print network architecture 

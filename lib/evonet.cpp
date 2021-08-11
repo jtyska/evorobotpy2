@@ -152,6 +152,8 @@ Evonet::Evonet()
   m_nbins = 1;     // whether actions are encoded in bins
   m_low = -1.0;    // minimum value for observations and actions
   m_high = 1.0;    // maximum value for observations and actions
+  m_minParamNoise = -0.7;
+
  
     
   netRng = new RandomGenerator(time(NULL));  // create a random generator
@@ -169,10 +171,20 @@ void Evonet::seed(int s)
 }
 
 
+void Evonet::setMinParamNoise(double v)
+{
+  m_minParamNoise = v;
+}
+
+double Evonet::getMinParamNoise()
+{
+  return m_minParamNoise;
+}
+
+
 // initialize the network
 Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int noutputs, int nlayers, int nhiddens2, int bias, int netType, int actFunct, int outType, int wInit, int clip, int normalize, int randAct, double randActR, double wrange, int nbins, double low, double high)
-{
-    
+{  
   m_nnetworks = nnetworks;           // number of networks
   m_heterogeneous = heterogeneous;   // whether the networks are heterogeneous or homogeneous
   m_nbins = nbins;                   // number of bins, 1 is equivalent to no bins
@@ -658,8 +670,8 @@ void Evonet::updateNet()
         { 
           //printf("Noise before clip (p) on output %i = %f\n",i,*p);
           noiseP = *p;
-          if(noiseP<-0.9)
-            noiseP=-0.9;
+          if(noiseP<m_minParamNoise)
+            noiseP=m_minParamNoise;
           //printf(" ---> Noise (p) after clip on output %i = %f\n",i,*p);
           //printf("%f,",i,*p);
           m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(noiseP); // * m_randActR;

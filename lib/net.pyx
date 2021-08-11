@@ -30,7 +30,13 @@ cdef class PyEvonet:
         self.c_net = Evonet(nnetworks, heterogeneous, ninputs, nhiddens, noutputs, nlayers, nhiddens2, bias, netType, actFunct, outType, wInit, clip, normalize, randAct, randActR, wrange, nbins, low, high)
 
     def seed(self, int s):
-        self.c_net.seed(s)   
+        self.c_net.seed(s)
+
+    def getMinParamNoise(self):
+        return self.c_net.getMinParamNoise()     
+    
+    def setMinParamNoise(self, double v):
+        return self.c_net.setMinParamNoise(v)
 
     def resetNet(self):
         self.c_net.resetNet()
