@@ -291,6 +291,8 @@ class Algo(EvoAlgo):
         self.savedata()# save data at the end of evolution
         np.save(self.filedir + "/S" + str(self.seed) + ".iev",self.ievReg)
         np.save(self.filedir + "/S" + str(self.seed) + ".cv",self.cvReg)
+        self.ievReg = []
+        self.cvReg = []
 
         # print simulation time
         end_time = time.time()
