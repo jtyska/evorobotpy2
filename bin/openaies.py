@@ -191,6 +191,20 @@ class Algo(EvoAlgo):
             
            print(f" =*=*=* GEN {self.cgen} - IEV = {iev/popsize} =*=*=*")
            self.ievReg.append(iev/popsize)
+                      
+           win = 250
+           if((self.cgen-1)!=0 and ((self.cgen-1)%win)==0):
+                print(f"MOVING AVERAGE IEV = {np.mean(self.ievReg[-win:])}")
+                if np.mean(self.ievReg[-win:])>0.3:                    
+                    if(self.cgen<=2*win or np.mean(self.iev[-2*win:-win])>0.3):
+                        print('------> BAD IEV: restarting the center <------')
+                        self.policy.nn.initWeights()
+                        if (self.policy.normalize == 1):
+                            self.policy.nn.resetNormalizationVectors() 
+                        self.center = np.copy(self.policy.get_trainable_flat())
+           else:
+               print('MOVING AVERAGE IS OK - NOT RESTARTING')
+
 
     def optimize(self):
             
