@@ -42,32 +42,26 @@ class Algo(EvoAlgo):
             self.wdecay = 0
             self.symseed = 1
             self.saveeach = 60
+            self.percentual_env_var = 1
             options = config.options("ALGO")
             for o in options:
-                found = 0
                 if o == "maxmsteps":
-                    self.maxsteps = config.getint("ALGO","maxmsteps") * 1000000
-                    found = 1
-                if o == "stepsize":
-                    self.stepsize = config.getfloat("ALGO","stepsize")
-                    found = 1
-                if o == "noisestddev":
-                    self.noiseStdDev = config.getfloat("ALGO","noiseStdDev")
-                    found = 1
-                if o == "samplesize":
-                    self.batchSize = config.getint("ALGO","sampleSize")
-                    found = 1
-                if o == "wdecay":
-                    self.wdecay = config.getint("ALGO","wdecay")
-                    found = 1
-                if o == "symseed":
-                    self.symseed = config.getint("ALGO","symseed")
-                    found = 1
-                if o == "saveeach":
+                    self.maxsteps = config.getint("ALGO","maxmsteps") * 1000000                    
+                elif o == "stepsize":
+                    self.stepsize = config.getfloat("ALGO","stepsize")                    
+                elif o == "noisestddev":
+                    self.noiseStdDev = config.getfloat("ALGO","noiseStdDev")                    
+                elif o == "samplesize":
+                    self.batchSize = config.getint("ALGO","sampleSize")                    
+                elif o == "wdecay":
+                    self.wdecay = config.getint("ALGO","wdecay")                    
+                elif o == "symseed":
+                    self.symseed = config.getint("ALGO","symseed")                    
+                elif o == "saveeach":
                     self.saveeach = config.getint("ALGO","saveeach")
-                    found = 1
-
-                if found == 0:
+                elif o == "percentual_env_var":
+                    self.percentual_env_var = config.getfloat("ALGO","percentual_env_var")
+                else:
                     print("\033[1mOption %s in section [ALGO] of %s file is unknown\033[0m" % (o, filename))
                     print("available hyperparameters are: ")
                     print("maxmsteps [integer]       : max number of (million) steps (default 1)")
@@ -136,7 +130,7 @@ class Algo(EvoAlgo):
                 self.steps += eval_length
 
                 # we re-evaluate the individuals to estimate the iev measure
-                if (((self.cgen - 1) % 10) == 0):
+                if (((self.cgen - 1) % 1) == 0): #- changing for evaluating them at each generation
                     eval_rews, eval_length = self.policy.rollout(self.policy.ntrials, seed=(self.seed + (self.cgen * self.batchSize) + b + 999))  
                     self.samplefitness2[b*2+bb] = eval_rews
 
@@ -145,13 +139,14 @@ class Algo(EvoAlgo):
 
         self.bfit = fitness[(self.batchSize * 2) - 1]
         bidx = self.index[(self.batchSize * 2) - 1]  
+
         if ((bidx % 2) == 0):                                     # regenerate the genotype of the best samples
             bestid = int(bidx / 2)
             self.bestsol = self.center + self.samples[bestid] * self.noiseStdDev  
         else:
             bestid = int(bidx / 2)
             self.bestsol = self.center - self.samples[bestid] * self.noiseStdDev
-
+        
         self.updateBest(self.bfit, self.bestsol)                  # Stored if it is the best obtained so far 
                 
         # postevaluate best sample of the last generation
@@ -174,7 +169,7 @@ class Algo(EvoAlgo):
             self.updateBestg(gfit, self.bestsol)
             
         # we compute the iev measure
-        if (((self.cgen - 1) % 10) == 0):
+        if (((self.cgen - 1) % 1) == 0):
            fitness2, index2 = ascendent_sort(self.samplefitness2)
            popsize = self.batchSize * 2
            utilities = zeros(popsize)
@@ -191,8 +186,9 @@ class Algo(EvoAlgo):
             
            print(f" =*=*=* GEN {self.cgen} - IEV = {iev/popsize} =*=*=*")
            self.ievReg.append(iev/popsize)
-                    
-           gen = 250
+           
+           #code for resetting the center when stagnation occurs - based on the IEV
+           """gen = 250
            win = int(gen/10)
            if((self.cgen-1)!=0 and ((self.cgen-1)%gen)==0):
                 print(f"{type(win)} - {win}")
@@ -205,10 +201,11 @@ class Algo(EvoAlgo):
                         if (self.policy.normalize == 1):
                             self.policy.nn.resetNormalizationVectors() 
                         self.center = np.copy(self.policy.get_trainable_flat())
+                        self.center = self.center[:self.nparams]
                     else:
                         print(f'NOT RESETING CENTER BECAUSE MOVING AVERAGE ABOVE THRESHOLD TWICE {np.mean(self.ievReg[-win:])} {np.mean(self.ievReg[-2*win:-win])} bfit {self.bfit}')
            else:
-               print(f'MOVING AVERAGE IS OK last {0 if self.cgen<gen else np.mean(self.ievReg[-win:])} - NOT RESTARTING')               
+               print(f'MOVING AVERAGE IS OK last {0 if self.cgen<gen else np.mean(self.ievReg[-win:])} - NOT RESTARTING')"""
 
 
     def optimize(self):
@@ -263,6 +260,12 @@ class Algo(EvoAlgo):
         self.policy.nn.setMinParamNoise(-0.5)
         defaultRandInitLow = self.policy.env.robot.randInitLow
         defaultRandInitHigh = self.policy.env.robot.randInitHigh
+
+        #applying the initial environmental variation        
+        self.policy.env.robot.randInitLow = defaultRandInitLow*self.percentual_env_var
+        self.policy.env.robot.randInitHigh = defaultRandInitHigh*self.percentual_env_var
+        print(f"####USING {self.percentual_env_var*100} of the default environmental variation - actual range = [{self.policy.env.robot.randInitLow},{self.policy.env.robot.randInitHigh}]")
+
         while (self.steps < self.maxsteps):
 
             self.evaluate()                           # evaluate samples  
@@ -273,6 +276,7 @@ class Algo(EvoAlgo):
             
             completion = self.steps / float(self.maxsteps)*100;
 
+            #the if below is used for the dynamic adjustment of the environmental variation - to be parameterized to facilitate the experiments
             if len(self.stat)>=30:
                 lastFive = self.stat[-26:-1:6]
                 meanLF = np.mean(lastFive)
@@ -287,16 +291,16 @@ class Algo(EvoAlgo):
                 elif (cv>0.2): #too much variation - reducing it
                     multiplier=0.9
 
-                if(completion<=70):
-                    self.policy.env.robot.randInitLow*=multiplier
-                    self.policy.env.robot.randInitHigh*=multiplier
-                else:
-                    self.policy.env.robot.randInitLow = defaultRandInitLow
-                    self.policy.env.robot.randInitHigh = defaultRandInitHigh
+                #if(completion<=70):
+                #    self.policy.env.robot.randInitLow*=multiplier
+                #    self.policy.env.robot.randInitHigh*=multiplier
+                #else:
+                #    self.policy.env.robot.randInitLow = defaultRandInitLow
+                #    self.policy.env.robot.randInitHigh = defaultRandInitHigh                
                 
                 print(f"Fitness Cofficient of Variation (CV) = {cv} - Environmental variation = {self.policy.env.robot.randInitLow},{self.policy.env.robot.randInitHigh}")
-                if (((self.cgen - 1) % 10) == 0):
-                    self.cvReg.append(cv)
+                #if (((self.cgen - 1) % 10) == 0):
+                self.cvReg.append(cv)
 
             if ((time.time() - last_save_time) > (self.saveeach * 60)):
                 self.savedata()                       # save data on files
