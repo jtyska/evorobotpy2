@@ -155,6 +155,11 @@ class Algo(EvoAlgo):
         if self.bestsol is not None:
             self.policy.set_trainable_flat(self.bestsol)
             self.tnormepisodes += self.inormepisodes
+            #post-evaluate on the standard environment variaton                
+            currentRandInitLow = self.policy.env.robot.randInitLow
+            currentRandInitHigh = self.policy.env.robot.randInitHigh
+            self.policy.env.robot.randInitLow = self.defaultRandInitLow
+            self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
             for t in range(self.policy.nttrials):
                 if self.policy.normalize == 1 and self.normepisodes < self.tnormepisodes:
                     self.policy.nn.normphase(1)
@@ -162,12 +167,16 @@ class Algo(EvoAlgo):
                     self.normalizationdatacollected = True
                 else:
                     self.policy.nn.normphase(0)
-                eval_rews, eval_length = self.policy.rollout(1, seed=(self.seed + 100000 + t))
+                
+                
+                eval_rews, eval_length = self.policy.rollout(1, seed=(self.seed + 100000 + t))                
                 gfit += eval_rews               
-                self.steps += eval_length
+                self.steps += eval_length            
             gfit /= self.policy.nttrials    
             self.updateBestg(gfit, self.bestsol)
-            
+        #reset the experimental environmental variation
+        self.policy.env.robot.randInitLow = currentRandInitHigh
+        self.policy.env.robot.randInitHigh = currentRandInitHigh
         # we compute the iev measure
         if (((self.cgen - 1) % 1) == 0):
            fitness2, index2 = ascendent_sort(self.samplefitness2)
@@ -258,12 +267,12 @@ class Algo(EvoAlgo):
         self.steps = 0
         print("Salimans: seed %d maxmsteps %d batchSize %d stepsize %lf noiseStdDev %lf wdecay %d symseed %d nparams %d" % (self.seed, self.maxsteps / 1000000, self.batchSize, self.stepsize, self.noiseStdDev, self.wdecay, self.symseed, self.nparams))
         self.policy.nn.setMinParamNoise(-0.5)
-        defaultRandInitLow = self.policy.env.robot.randInitLow
-        defaultRandInitHigh = self.policy.env.robot.randInitHigh
+        self.defaultRandInitLow = self.policy.env.robot.randInitLow
+        self.defaultRandInitHigh = self.policy.env.robot.randInitHigh
 
         #applying the initial environmental variation        
-        self.policy.env.robot.randInitLow = defaultRandInitLow*self.percentual_env_var
-        self.policy.env.robot.randInitHigh = defaultRandInitHigh*self.percentual_env_var
+        self.policy.env.robot.randInitLow = self.defaultRandInitLow*self.percentual_env_var
+        self.policy.env.robot.randInitHigh = self.defaultRandInitHigh*self.percentual_env_var
         print(f"####USING {self.percentual_env_var*100} of the default environmental variation - actual range = [{self.policy.env.robot.randInitLow},{self.policy.env.robot.randInitHigh}]")
 
         while (self.steps < self.maxsteps):
