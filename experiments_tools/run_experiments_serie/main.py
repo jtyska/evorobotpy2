@@ -10,13 +10,13 @@ import time
 e_folder = '../exp_config_generator/experiment'
 
 '''how many seeds do you want to run for each experiment?'''
-number_of_seeds = 2
+number_of_seeds = 10
 
 '''you can type the additional parameters that you want to use to run your experiments'''
-additional_params = '-w 3'
+additional_params = ''
 
 '''how many experiments do you want to run simultaneously?'''
-simultaneously = 4
+simultaneously = 96
 
 '''seed initial number'''
 initial_seed_number = 1
