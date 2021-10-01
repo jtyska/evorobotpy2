@@ -43,6 +43,7 @@ class Algo(EvoAlgo):
             self.symseed = 1
             self.saveeach = 60
             self.percentual_env_var = 1
+            self.fine_tuning_period = 0
             options = config.options("ALGO")
             for o in options:
                 if o == "maxmsteps":
@@ -61,6 +62,8 @@ class Algo(EvoAlgo):
                     self.saveeach = config.getint("ALGO","saveeach")
                 elif o == "percentual_env_var":
                     self.percentual_env_var = config.getfloat("ALGO","percentual_env_var")
+                elif o == "fine_tuning_period":
+                    self.fine_tuning_period = config.getfloat("ALGO","fine_tuning_period")
                 else:
                     print("\033[1mOption %s in section [ALGO] of %s file is unknown\033[0m" % (o, filename))
                     print("available hyperparameters are: ")
@@ -275,6 +278,10 @@ class Algo(EvoAlgo):
         self.policy.env.robot.randInitHigh = self.defaultRandInitHigh*self.percentual_env_var
         print(f"####USING {self.percentual_env_var*100} of the default environmental variation - actual range = [{self.policy.env.robot.randInitLow},{self.policy.env.robot.randInitHigh}]")
 
+        #increasing the evolution duration for using a fine tuning period
+        if self.fine_tuning_period != 0:
+            self.maxsteps = self.maxsteps*(1+self.fine_tuning_period)
+
         while (self.steps < self.maxsteps):
 
             self.evaluate()                           # evaluate samples  
@@ -324,6 +331,11 @@ class Algo(EvoAlgo):
                 self.policy.nn.setMinParamNoise(-1)
             elif completion >=60:
                 self.policy.nn.setMinParamNoise(-3)
+
+            if self.steps>self.maxsteps*(1+self.fine_tuning_period):
+                print("=========== Entering the fine tuning period (default env var)============")
+                self.policy.env.robot.randInitLow = self.defaultRandInitLow
+                self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
 
             print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f bestsam %.2f avg %.2f weightsize %.2f minParamNoise %.2f' %
                       (self.seed, completion, self.cgen, self.steps / 1000000, self.bestfit, self.bestgfit, self.bfit, self.avgfit, self.avecenter,self.policy.nn.getMinParamNoise()))
