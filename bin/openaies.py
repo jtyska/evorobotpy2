@@ -44,6 +44,8 @@ class Algo(EvoAlgo):
             self.saveeach = 60
             self.percentual_env_var = 1
             self.fine_tuning_period = 0
+            self.increase_env_var_each = 0
+            self.increase_env_var_by = 0
             options = config.options("ALGO")
             for o in options:
                 if o == "maxmsteps":
@@ -64,6 +66,10 @@ class Algo(EvoAlgo):
                     self.percentual_env_var = config.getfloat("ALGO","percentual_env_var")
                 elif o == "fine_tuning_period":
                     self.fine_tuning_period = config.getfloat("ALGO","fine_tuning_period")
+                elif o == "increase_env_var_each":
+                    self.increase_env_var_each = config.getfloat("ALGO","increase_env_var_each")
+                elif o == "increase_env_var_by":
+                    self.increase_env_var_by = config.getfloat("ALGO","increase_env_var_by")
                 else:
                     print("\033[1mOption %s in section [ALGO] of %s file is unknown\033[0m" % (o, filename))
                     print("available hyperparameters are: ")
@@ -280,7 +286,10 @@ class Algo(EvoAlgo):
 
         #increasing the evolution duration for using a fine tuning period
         if self.fine_tuning_period != 0:
+            self.defaultmaxsteps = self.maxsteps
             self.maxsteps = self.maxsteps*(1+self.fine_tuning_period)
+            self.finetuningsteps = self.maxsteps - self.defaultmaxsteps
+            fineTuningStarted = False
 
         while (self.steps < self.maxsteps):
 
@@ -332,10 +341,23 @@ class Algo(EvoAlgo):
             elif completion >=60:
                 self.policy.nn.setMinParamNoise(-3)
 
-            if self.steps>self.maxsteps*(1+self.fine_tuning_period):
-                print("=========== Entering the fine tuning period (default env var)============")
-                self.policy.env.robot.randInitLow = self.defaultRandInitLow
-                self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
+            if self.steps>self.maxsteps/(1+self.fine_tuning_period):                                
+                if not fineTuningStarted:
+                   print("=========== Entering the fine tuning period (default env var)============")
+                   fineTuningStarted = True
+                   self.policy.env.robot.randInitLow -= self.increase_env_var_by
+                   self.policy.env.robot.randInitHigh += self.increase_env_var_by                   
+                   changeEach = self.increase_env_var_each;
+
+                if (self.increase_env_var_each == 0 and self.increase_env_var_each==0):
+                    self.policy.env.robot.randInitLow = self.defaultRandInitLow
+                    self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
+                elif (self.steps - self.defaultmaxsteps)/self.finetuningsteps > changeEach:
+                    changeEach += self.increase_env_var_each;
+                    self.policy.env.robot.randInitLow -= self.increase_env_var_by
+                    self.policy.env.robot.randInitHigh += self.increase_env_var_by
+
+
 
             print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f bestsam %.2f avg %.2f weightsize %.2f minParamNoise %.2f' %
                       (self.seed, completion, self.cgen, self.steps / 1000000, self.bestfit, self.bestgfit, self.bfit, self.avgfit, self.avecenter,self.policy.nn.getMinParamNoise()))
