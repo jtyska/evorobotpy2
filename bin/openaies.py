@@ -345,17 +345,19 @@ class Algo(EvoAlgo):
                 if not fineTuningStarted:
                    print("=========== Entering the fine tuning period (default env var)============")
                    fineTuningStarted = True
-                   self.policy.env.robot.randInitLow -= self.increase_env_var_by
-                   self.policy.env.robot.randInitHigh += self.increase_env_var_by                   
-                   changeEach = self.increase_env_var_each;
+                   #start with 10% of variation
+                   self.policy.env.robot.randInitLow = 0.01
+                   self.policy.env.robot.randInitHigh = 0.01                   
+                   changeEach = 0.1; #at 10%
 
                 if (self.increase_env_var_each == 0 and self.increase_env_var_each==0):
                     self.policy.env.robot.randInitLow = self.defaultRandInitLow
                     self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
                 elif (self.steps - self.defaultmaxsteps)/self.finetuningsteps > changeEach:
-                    changeEach += self.increase_env_var_each;
-                    self.policy.env.robot.randInitLow -= self.increase_env_var_by
-                    self.policy.env.robot.randInitHigh += self.increase_env_var_by
+                    changeEach += 0.1;
+                    #increase 10% more 
+                    self.policy.env.robot.randInitLow -= 0.01
+                    self.policy.env.robot.randInitHigh += 0.01
 
 
 
