@@ -38,6 +38,18 @@ cdef class PyEvonet:
     def setMinParamNoise(self, double v):
         return self.c_net.setMinParamNoise(v)
 
+    def getActionNoise(self):
+        return self.c_net.getActionNoise()     
+    
+    def setActionNoise(self, double v):
+        return self.c_net.setActionNoise(v)
+    
+    def getStepsCorrNoise(self):
+        return self.c_net.getStepsCorrNoise()     
+    
+    def setStepsCorrNoise(self, int v):
+        return self.c_net.setStepsCorrNoise(v)
+
     def resetNet(self):
         self.c_net.resetNet()
 

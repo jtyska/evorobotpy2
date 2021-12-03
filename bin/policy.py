@@ -211,8 +211,9 @@ class BulletPolicy(Policy):
                 t += 1
                 if (self.test > 0):
                     if (self.test == 1):
-                        self.env.render(mode="human")
-                        time.sleep(0.05)
+                        #self.env.render(mode="human")
+                        #time.sleep(0.05)
+                        pass
                     if (self.test == 2):
                         info = 'Trial %d Step %d Fit %.2f %.2f' % (trial, t, r, rew)
                         renderWorld.update(self.objs, info, self.ob, self.ac, self.nact)

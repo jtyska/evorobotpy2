@@ -11,6 +11,7 @@
 
 import numpy as np
 import time
+import pandas as pd
 
 class EvoAlgo(object):
     def __init__(self, env, policy, seed, fileini, filedir):
@@ -26,6 +27,7 @@ class EvoAlgo(object):
         self.stat = np.arange(0, dtype=np.float64) # a vector containing progress data across generations
         self.avgfit = 0.0                    # the average fitness of the population
         self.last_save_time = time.time()    # the last time in which data have been saved
+        self.robustness_test = 1
         
     def reset(self):
         self.bestfit = -999999999.0
@@ -41,7 +43,7 @@ class EvoAlgo(object):
         raise NotImplementedError
 
     def test(self, testfile):  # postevaluate an agent 
-        if (self.policy.test == 1 and "Bullet" in self.policy.environment):
+        if (self.robustness_test != 1 and self.policy.test == 1 and "Bullet" in self.policy.environment):
             self.env.render(mode="human")    # Pybullet render require this initialization
         if testfile is not None:
             if self.filedir.endswith("/"):
@@ -59,12 +61,37 @@ class EvoAlgo(object):
             self.policy.set_trainable_flat(bestgeno)
         else:
             self.policy.reset()
-        if (self.policy.nttrials > 0):
-            ntrials = self.policy.nttrials
+        if self.robustness_test == 1:                
+            corr_n_steps_list = list(range(1,11))
+            noise_level_list = np.linspace(0.01,0.55,10)
+            n_trials_per_condition = 10                
+            
+            print(f'######## ENTERING ROBUSTNESS TEST - number of total trials = {len(corr_n_steps_list)*len(noise_level_list)*n_trials_per_condition} ###########')
+            results = pd.DataFrame(columns=["corr_n_steps","noise_level","Trial","Reward","steps_taken"])
+            
+            self.policy.nttrials = n_trials_per_condition
+            for corr_n_steps in corr_n_steps_list:
+                self.policy.nn.setStepsCorrNoise(corr_n_steps)
+                for noise_level in noise_level_list:                    
+                    self.policy.nn.setActionNoise(noise_level)
+                    local_rew = 0
+                    local_eval_length = 0
+                    for t in range(self.policy.nttrials):                                                                    
+                        eval_rews, eval_length = self.policy.rollout(1, render=False, seed=(self.seed + 100000 + t))
+                        local_rew += eval_rews
+                        local_eval_length += eval_length                        
+                        #appending the results
+                        s_row = pd.Series([corr_n_steps,noise_level,t,eval_rews,eval_length], index=results.columns)
+                        results = results.append(s_row,ignore_index=True)
+                    print("Postevauation: noise_n_steps = %i; noise_level = %.2f; Average Fitness %.2f Total Steps %d" % (corr_n_steps, noise_level, local_rew/n_trials_per_condition, local_eval_length))
+            results.to_csv("robustness_"+testfile+".csv")
         else:
-            ntrials = self.policy.ntrials
-        eval_rews, eval_length = self.policy.rollout(ntrials, render=True, seed=self.policy.get_seed + 100000)
-        print("Postevauation: Average Fitness %.2f Total Steps %d" % (eval_rews, eval_length))
+            if (self.policy.nttrials > 0):
+                ntrials = self.policy.nttrials
+            else:
+                ntrials = self.policy.ntrials
+            eval_rews, eval_length = self.policy.rollout(ntrials, render=True, seed=self.policy.get_seed + 100000)
+            print("Postevauation: Average Fitness %.2f Total Steps %d" % (eval_rews, eval_length))
 
     def updateBest(self, fit, ind):  # checks whether this is the best agent so far and in case store it
         if fit > self.bestfit:

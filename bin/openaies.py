@@ -18,6 +18,7 @@ from utils import ascendent_sort
 import sys
 import os
 import configparser
+import pandas as pd
 
 # Parallel implementation of Open-AI-ES algorithm developed by Salimans et al. (2017)
 # the workers evaluate a fraction of the population in parallel
@@ -46,6 +47,7 @@ class Algo(EvoAlgo):
             self.fine_tuning_period = 0
             self.increase_env_var_each = 0
             self.increase_env_var_by = 0
+            self.robustness_test = 0
             options = config.options("ALGO")
             for o in options:
                 if o == "maxmsteps":
@@ -70,6 +72,8 @@ class Algo(EvoAlgo):
                     self.increase_env_var_each = config.getfloat("ALGO","increase_env_var_each")
                 elif o == "increase_env_var_by":
                     self.increase_env_var_by = config.getfloat("ALGO","increase_env_var_by")
+                elif o == "robustness_test":
+                    self.robustness_test = config.getint("ALGO","robustness_test")
                 else:
                     print("\033[1mOption %s in section [ALGO] of %s file is unknown\033[0m" % (o, filename))
                     print("available hyperparameters are: ")
@@ -161,7 +165,7 @@ class Algo(EvoAlgo):
         # postevaluate best sample of the last generation
         # in openaiesp.py this is done the next generation, move this section before the section "evaluate samples" to produce identical results
         gfit = 0
-        if self.bestsol is not None:
+        if self.bestsol is not None:            
             self.policy.set_trainable_flat(self.bestsol)
             self.tnormepisodes += self.inormepisodes
             #post-evaluate on the standard environment variaton                
@@ -169,18 +173,20 @@ class Algo(EvoAlgo):
             currentRandInitHigh = self.policy.env.robot.randInitHigh
             self.policy.env.robot.randInitLow = self.defaultRandInitLow
             self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
-            for t in range(self.policy.nttrials):
-                if self.policy.normalize == 1 and self.normepisodes < self.tnormepisodes:
-                    self.policy.nn.normphase(1)
-                    self.normepisodes += 1  # we collect normalization data
-                    self.normalizationdatacollected = True
-                else:
-                    self.policy.nn.normphase(0)
-                
-                
-                eval_rews, eval_length = self.policy.rollout(1, seed=(self.seed + 100000 + t))                
-                gfit += eval_rews               
-                self.steps += eval_length            
+                        
+            
+                for t in range(self.policy.nttrials):
+                    if self.policy.normalize == 1 and self.normepisodes < self.tnormepisodes:
+                        self.policy.nn.normphase(1)
+                        self.normepisodes += 1  # we collect normalization data
+                        self.normalizationdatacollected = True
+                    else:
+                        self.policy.nn.normphase(0)
+                    
+                    
+                    eval_rews, eval_length = self.policy.rollout(1, seed=(self.seed + 100000 + t))                
+                    gfit += eval_rews               
+                    self.steps += eval_length
             gfit /= self.policy.nttrials    
             self.updateBestg(gfit, self.bestsol)
         #reset the experimental environmental variation

@@ -117,6 +117,8 @@ public:
   double* m_noisevector;
   //mininum value of parametric noise allowed
   double m_minParamNoise;
+  //number of steps used for the correlated noise
+  int m_steps_corr_noise;
   // set the normaliztaion phase
   void normphase(int phase);
   // update normalization vectors
@@ -128,6 +130,10 @@ public:
   
   double getMinParamNoise();
   void setMinParamNoise(double v); 
+  double getActionNoise();
+  void setActionNoise(double v); 
+  double getStepsCorrNoise();
+  void setStepsCorrNoise(int v); 
 
 private:
   // Print network architecture 

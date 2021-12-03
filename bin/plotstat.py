@@ -45,7 +45,7 @@ if len(sys.argv) == 1:
                 #statl = len(stat[0])
                 #statsum = np.zeros((6,statl))
             col = np.random.uniform(low=0.0, high=1.0, size=3)
-            plt.plot(stat[0],stat[2],label=f, linewidth=1,  color=col)
+            plt.plot(stat[0],stat[3],label=f, linewidth=1,  color=col)
             #statsum = statsum + stat
             #statavesum += 1
             statsumn = statsumn + 1
@@ -66,8 +66,8 @@ else:
         stat = np.resize(stat, newsize)
         stat = np.transpose(stat)
         plt.title(sys.argv[1])
-        plt.plot(stat[0],stat[1],label='fit', linewidth=1,  color='r')
-        plt.plot(stat[0],stat[2],label='gfit', linewidth=1,  color='b')
+        plt.plot(stat[0],stat[3],label='fit', linewidth=1,  color='r')
+        plt.plot(stat[0],stat[4],label='gfit', linewidth=1,  color='b')
         plt.legend()
         plt.show()
 

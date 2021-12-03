@@ -153,7 +153,7 @@ Evonet::Evonet()
   m_low = -1.0;    // minimum value for observations and actions
   m_high = 1.0;    // maximum value for observations and actions
   m_minParamNoise = -0.7;
-
+  m_steps_corr_noise = 10;
  
     
   netRng = new RandomGenerator(time(NULL));  // create a random generator
@@ -179,6 +179,26 @@ void Evonet::setMinParamNoise(double v)
 double Evonet::getMinParamNoise()
 {
   return m_minParamNoise;
+}
+
+void Evonet::setActionNoise(double v)
+{
+  m_randActR = v;
+}
+
+double Evonet::getActionNoise()
+{
+  return m_randActR;
+}
+
+void Evonet::setStepsCorrNoise(int v)
+{
+  m_steps_corr_noise = v;
+}
+
+double Evonet::getStepsCorrNoise()
+{
+  return m_steps_corr_noise;
 }
 
 
@@ -209,7 +229,7 @@ Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int 
   m_outType = outType;
   m_wInit = wInit;
   m_clip = clip;
-  m_normalize = normalize;
+  m_normalize = normalize;  
   m_randAct = randAct;
   m_randActR = randActR;
   m_low = low;
@@ -303,7 +323,7 @@ Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int 
     m_clip = 0;
   if (m_clip == 1)
     printf("clip ");
-  if (m_randAct < 0 || m_randAct > 3)
+  if (m_randAct < 0 || m_randAct > 4)
     m_randAct = 0;
   switch (m_randAct)
     {
@@ -316,13 +336,16 @@ Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int 
        case 3:
          printf("generalized state dependent noise (magnitude %.2f) ", randActR);
          break;
+       case 4:
+         printf("correlated noise(magnitude %.2f) used for n_steps = %i ", m_randActR, m_steps_corr_noise);
+         break;
     }
   printf("\n");
     
   // allocate variables
   m_nblocks = 0;
   m_netinput = new double[m_nneurons]; // DEBUG ALREADY ALLOCATE IN THE FUNCTION ABOVE
-  if (m_randAct == 2)
+  if (m_randAct == 2 || m_randAct == 4)
     m_noisevector = new double[m_noutputs];
   if (m_randAct == 3)
     m_noisevector = new double[m_nhiddens];
@@ -679,15 +702,22 @@ void Evonet::updateNet()
         }
         //printf("],\n");
     }
-   }
+   }   
   if (m_randAct == 3)
    {
-    if (step == 0 || (step % 10) == 0)
+    if (step == 0 || (step % m_steps_corr_noise) == 0)
     for (i=0, p = (cgenotype +  m_nparams - m_nhiddens); i < m_nhiddens; i++, p++)
       {
         m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * exp(*p); // * m_randActR;
         //printf("noise %.2f \n", exp(*p));
 	  }
+   }
+   //correlated noise generated every m_steps_corr_noise steps   
+   if (m_randAct == 4){     
+     if (step == 0 || (step % m_steps_corr_noise) == 0){        
+        for (i=0; i < m_noutputs; i++)
+           m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * m_randActR;        
+     }
    }
   step += 1;
  
@@ -857,6 +887,7 @@ void Evonet::updateNet()
                     break;
                   // gaussian noise with parametric range (diagonal-gaussian), the range of noise depends on parameters adapted together with the connection weights
                   case 2:
+                  case 4:
                     //cact[i] = neurona[m_ninputs + m_nhiddens + i] + (netRng->getGaussian(1.0, 0.0) * exp(*p));  // classic
                     cact[i] = neurona[m_ninputs + m_nhiddens + i] + m_noisevector[i];  // every N steps
                     //if (step == 1) printf("noise %.2f \n", exp(*p));
