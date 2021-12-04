@@ -1,0 +1,10 @@
+
+Average Generalization: 1038.87 +-8.29 (10 S*.fit files)
+
+Average Generalization: 1306.61 +-445.10 (10 S*.fit files)
+
+Average Generalization: 1225.39 +-285.97 (10 S*.fit files)
+
+Average Generalization: 1032.13 +-2.27 (10 S*.fit files)
+
+Average Generalization: 1560.27 +-892.19 (10 S*.fit files)
