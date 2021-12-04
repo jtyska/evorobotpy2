@@ -175,18 +175,19 @@ class Algo(EvoAlgo):
             self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
                         
             
-                for t in range(self.policy.nttrials):
-                    if self.policy.normalize == 1 and self.normepisodes < self.tnormepisodes:
-                        self.policy.nn.normphase(1)
-                        self.normepisodes += 1  # we collect normalization data
-                        self.normalizationdatacollected = True
-                    else:
-                        self.policy.nn.normphase(0)
-                    
-                    
-                    eval_rews, eval_length = self.policy.rollout(1, seed=(self.seed + 100000 + t))                
-                    gfit += eval_rews               
-                    self.steps += eval_length
+            for t in range(self.policy.nttrials):
+                if self.policy.normalize == 1 and self.normepisodes < self.tnormepisodes:
+                    self.policy.nn.normphase(1)
+                    self.normepisodes += 1  # we collect normalization data
+                    self.normalizationdatacollected = True
+                else:
+                    self.policy.nn.normphase(0)
+                
+                
+                eval_rews, eval_length = self.policy.rollout(1, seed=(self.seed + 100000 + t))                
+                gfit += eval_rews               
+                self.steps += eval_length
+                
             gfit /= self.policy.nttrials    
             self.updateBestg(gfit, self.bestsol)
         #reset the experimental environmental variation
