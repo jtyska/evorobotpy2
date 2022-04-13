@@ -63,9 +63,15 @@ class EvoAlgo(object):
             self.policy.reset()
         if self.robustness_test == 1:                
             corr_n_steps_list = list(range(1,11))
+<<<<<<< Updated upstream
             noise_level_list = np.linspace(0.01,0.55,10)            
             n_trials_per_condition = 10
             
+=======
+            noise_level_list = np.linspace(0.01,0.55,10)
+            n_trials_per_condition = 10                
+
+>>>>>>> Stashed changes
             #corr_n_steps_list = [1,15]
             #noise_level_list = [0.3]
             #n_trials_per_condition = 10

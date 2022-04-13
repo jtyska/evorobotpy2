@@ -326,7 +326,11 @@ Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int 
     printf("clip ");
   if (m_randAct < 0 || m_randAct > 4)
     m_randAct = 0;
+<<<<<<< Updated upstream
 
+=======
+  m_randAct = 4;
+>>>>>>> Stashed changes
   switch (m_randAct)
     {
        case 1:

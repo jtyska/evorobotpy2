@@ -191,7 +191,7 @@ class Algo(EvoAlgo):
             gfit /= self.policy.nttrials    
             self.updateBestg(gfit, self.bestsol)
         #reset the experimental environmental variation
-        self.policy.env.robot.randInitLow = currentRandInitHigh
+        self.policy.env.robot.randInitLow = currentRandInitLow
         self.policy.env.robot.randInitHigh = currentRandInitHigh
         # we compute the iev measure
         if (((self.cgen - 1) % 1) == 0):
@@ -348,25 +348,23 @@ class Algo(EvoAlgo):
             elif completion >=60:
                 self.policy.nn.setMinParamNoise(-3)
 
-            if self.steps>self.maxsteps/(1+self.fine_tuning_period):                                
-                if not fineTuningStarted:
-                   print("=========== Entering the fine tuning period (default env var)============")
-                   fineTuningStarted = True
-                   #start with 10% of variation
-                   self.policy.env.robot.randInitLow = 0.01
-                   self.policy.env.robot.randInitHigh = 0.01                   
-                   changeEach = 0.1; #at 10%
+            #if False and self.steps>self.maxsteps/(1+self.fine_tuning_period):
+            #    if not fineTuningStarted:
+            #       print("=========== Entering the fine tuning period (default env var)============")
+            #       fineTuningStarted = True
+            #       #start with 10% of variation
+            #       self.policy.env.robot.randInitLow = 0.01
+            #       self.policy.env.robot.randInitHigh = 0.01                   
+            #       changeEach = 0.1; #at 10%
 
-                if (self.increase_env_var_each == 0 and self.increase_env_var_each==0):
-                    self.policy.env.robot.randInitLow = self.defaultRandInitLow
-                    self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
-                elif (self.steps - self.defaultmaxsteps)/self.finetuningsteps > changeEach:
-                    changeEach += 0.1;
+            #    if (self.increase_env_var_each == 0 and self.increase_env_var_each==0):
+            #        self.policy.env.robot.randInitLow = self.defaultRandInitLow
+            #        self.policy.env.robot.randInitHigh = self.defaultRandInitHigh
+            #    elif (self.steps - self.defaultmaxsteps)/self.finetuningsteps > changeEach:
+            #        changeEach += 0.1;
                     #increase 10% more 
-                    self.policy.env.robot.randInitLow -= 0.01
-                    self.policy.env.robot.randInitHigh += 0.01
-
-
+            #        self.policy.env.robot.randInitLow -= 0.01
+            #        self.policy.env.robot.randInitHigh += 0.01
 
             print('Seed %d (%.1f%%) gen %d msteps %d bestfit %.2f bestgfit %.2f bestsam %.2f avg %.2f weightsize %.2f minParamNoise %.2f' %
                       (self.seed, completion, self.cgen, self.steps / 1000000, self.bestfit, self.bestgfit, self.bfit, self.avgfit, self.avecenter,self.policy.nn.getMinParamNoise()))
