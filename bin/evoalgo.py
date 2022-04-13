@@ -63,8 +63,12 @@ class EvoAlgo(object):
             self.policy.reset()
         if self.robustness_test == 1:                
             corr_n_steps_list = list(range(1,11))
-            noise_level_list = np.linspace(0.01,0.55,10)
-            n_trials_per_condition = 10                
+            noise_level_list = np.linspace(0.01,0.55,10)            
+            n_trials_per_condition = 10
+            
+            #corr_n_steps_list = [1,15]
+            #noise_level_list = [0.3]
+            #n_trials_per_condition = 10
             
             print(f'######## ENTERING ROBUSTNESS TEST - number of total trials = {len(corr_n_steps_list)*len(noise_level_list)*n_trials_per_condition} ###########')
             results = pd.DataFrame(columns=["corr_n_steps","noise_level","Trial","Reward","steps_taken"])
@@ -90,7 +94,7 @@ class EvoAlgo(object):
                 ntrials = self.policy.nttrials
             else:
                 ntrials = self.policy.ntrials
-            eval_rews, eval_length = self.policy.rollout(ntrials, render=True, seed=self.policy.get_seed + 100000)
+            eval_rews, eval_length = self.policy.rollout(ntrials, render=True, seed=self.policy.get_seed + 100000,dont_sleep=self.robustness_test)
             print("Postevauation: Average Fitness %.2f Total Steps %d" % (eval_rews, eval_length))
 
     def updateBest(self, fit, ind):  # checks whether this is the best agent so far and in case store it

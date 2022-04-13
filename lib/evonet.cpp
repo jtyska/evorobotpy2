@@ -81,6 +81,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #include <math.h>
 #include <time.h>
 #include <ctype.h>
@@ -153,7 +154,7 @@ Evonet::Evonet()
   m_low = -1.0;    // minimum value for observations and actions
   m_high = 1.0;    // maximum value for observations and actions
   m_minParamNoise = -0.7;
-  m_steps_corr_noise = 10;
+  m_steps_corr_noise = 1;
  
     
   netRng = new RandomGenerator(time(NULL));  // create a random generator
@@ -325,6 +326,7 @@ Evonet::Evonet(int nnetworks, int heterogeneous, int ninputs, int nhiddens, int 
     printf("clip ");
   if (m_randAct < 0 || m_randAct > 4)
     m_randAct = 0;
+
   switch (m_randAct)
     {
        case 1:
@@ -683,6 +685,8 @@ void Evonet::updateNet()
   float noiseP;
   double lstm[4]; // gates: forget, input, output, gate-gate
 	
+  std::cout << "WHAT =" << m_randAct << std::flush;   
+
   // update the noise vector (every 10 steps)
   if (m_randAct == 2)
    {
@@ -713,8 +717,10 @@ void Evonet::updateNet()
 	  }
    }
    //correlated noise generated every m_steps_corr_noise steps   
-   if (m_randAct == 4){     
-     if (step == 0 || (step % m_steps_corr_noise) == 0){        
+   if (m_randAct == 4){
+     printf("YES step %li - each %i steps",step, m_steps_corr_noise);
+     if (step == 0 || (step % m_steps_corr_noise) == 0){
+        printf("Generating noise at step %li - each %i steps",step, m_steps_corr_noise);
         for (i=0; i < m_noutputs; i++)
            m_noisevector[i] = netRng->getGaussian(1.0, 0.0) * m_randActR;        
      }

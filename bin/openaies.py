@@ -47,7 +47,7 @@ class Algo(EvoAlgo):
             self.fine_tuning_period = 0
             self.increase_env_var_each = 0
             self.increase_env_var_by = 0
-            self.robustness_test = 0
+            self.robustness_test = 1
             options = config.options("ALGO")
             for o in options:
                 if o == "maxmsteps":

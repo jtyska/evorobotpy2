@@ -187,10 +187,13 @@ class BulletPolicy(Policy):
         self.ninputs = env.observation_space.shape[0]      # only works for problems with continuous observation space
         self.noutputs = env.action_space.shape[0]          # only works for problems with continuous action space
         Policy.__init__(self, env, filename, seed, test)
-    
-    def rollout(self, ntrials, render=False, seed=None):   # evaluate the policy for one or more episodes 
+        
+    def rollout(self, ntrials, render=False, seed=None,dont_sleep=False):   # evaluate the policy for one or more episodes 
         rews = 0.0                      # summed reward
         steps = 0                       # steps performed
+        
+        save_joint_data = []
+
         if (self.test == 2):
             self.objs = np.arange(10, dtype=np.float64) # if the policy is used to test a trained agent and to visualize the neurons, we need initialize the graphic render  
             self.objs[0] = -1
@@ -198,21 +201,32 @@ class BulletPolicy(Policy):
         if seed is not None:
             self.env.seed(seed)          # set the seed of the environment that impacts on the initialization of the robot/environment
             self.nn.seed(seed)           # set the seed of evonet that impacts on the noise eventually added to the activation of the neurons        
-        for trial in range(ntrials):
+        for trial in range(ntrials):            
+            temp_joint_data = []
+
             self.ob = self.env.reset()   # reset the environment
+            joint_state = []
+            for i,j in enumerate(self.env.robot.ordered_joints):
+                joint_state.append(j.current_position()[0])
+            temp_joint_data.append(joint_state[:])
+            
             self.nn.resetNet()           # reset the activation of the neurons (necessary for recurrent policies)
             rew = 0
             t = 0
-            while t < self.maxsteps:
+
+            print("INITIATING corr_n_steps ",self.nn.getStepsCorrNoise())
+            while t < self.maxsteps:                                                
                 self.nn.copyInput(self.ob)                    # copy the pointer to the observation vector to evonet
                 self.nn.updateNet()                           # update the activation of the policy
-                self.ob, r, done, _ = self.env.step(self.ac)  # perform a simulation step
+
+                self.ob, r, done, _ = self.env.step(self.ac)  # perform a simulation step                
                 rew += r
                 t += 1
                 if (self.test > 0):
                     if (self.test == 1):
-                        #self.env.render(mode="human")
-                        #time.sleep(0.05)
+                        if not dont_sleep and False:
+                            self.env.render(mode="human")
+                            time.sleep(0.05)
                         pass
                     if (self.test == 2):
                         info = 'Trial %d Step %d Fit %.2f %.2f' % (trial, t, r, rew)
@@ -221,9 +235,13 @@ class BulletPolicy(Policy):
                     break
             if (self.test > 0):
                 print("Trial %d Fit %.2f Steps %d " % (trial, rew, t))
+            print("Size of temp_joint_data = ",len(temp_joint_data))
+            if t == 1000:
+                save_joint_data = save_joint_data + temp_joint_data
             steps += t
             rews += rew
         rews /= ntrials                # Normalize reward by the number of trials
+        np.save("humanoid_init_conditions.npy",np.array(save_joint_data))
         if (self.test > 0 and ntrials > 1):
             print("Average Fit %.2f Steps %.2f " % (rews, steps/float(ntrials)))
         return rews, steps
@@ -259,7 +277,7 @@ class GymPolicy(Policy):
                 rew += r
                 t += 1
                 if (self.test > 0):
-                    if (self.test == 1):
+                    if self.test == 1:
                         self.env.render()
                         time.sleep(0.05)
                     if (self.test == 2):
