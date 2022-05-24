@@ -1,0 +1,2 @@
+Walker2DBulletEnv-v0-2.ini
+{'enviroment': 'Walker2DBulletEnv-v0', 'maxsteps': 1000, 'frequency': 50, 'random_change': 'false', 'states_change': '1, ab, 3, cd', 'maxmsteps': 50, 'maxsteps_change': 500}
