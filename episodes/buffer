@@ -1,0 +1,24 @@
+HOPPER-2-3-5-10
+Average Generalization: 2376.08 +-225.41 (10 S*.fit files)
+Average Generalization: 2465.12 +-164.03 (10 S*.fit files)
+Average Generalization: 2384.73 +-235.47 (10 S*.fit files)
+Average Generalization: 2419.00 +-248.04 (10 S*.fit files)
+HALFCHEETAH-2-3-5-10
+Average Generalization: 2467.45 +-319.04 (10 S*.fit files)
+Average Generalization: 2247.75 +-697.43 (10 S*.fit files)
+Average Generalization: 2418.83 +-486.05 (10 S*.fit files)
+Average Generalization: 2691.78 +-326.47 (10 S*.fit files)
+ANT-2-3-5-10
+Average Generalization: 1647.82 +-314.93 (10 S*.fit files)
+Average Generalization: 1512.28 +-353.32 (10 S*.fit files)
+Average Generalization: 1849.09 +-313.98 (10 S*.fit files)
+Average Generalization: 1966.75 +-389.79 (10 S*.fit files)
+WALKER-2-3-5-10
+Average Generalization: 1262.98 +-550.09 (10 S*.fit files)
+Average Generalization: 1359.84 +-453.02 (10 S*.fit files)
+Average Generalization: 1421.16 +-473.30 (10 S*.fit files)
+Average Generalization: 1206.21 +-553.56 (10 S*.fit files)
+HUMANOID-2-3-5-10
+Average Generalization: 2401.78 +-889.06 (10 S*.fit files)
+Average Generalization: 2445.03 +-559.08 (10 S*.fit files)
+Average Generalization: 2588.94 +-439.56 (10 S*.fit files)
