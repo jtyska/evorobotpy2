@@ -1,2 +1,0 @@
-
-Average Generalization: 2243.38 +-756.84 (10 S*.fit files)
