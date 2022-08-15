@@ -7,7 +7,7 @@ import time
 '''setting variables'''
 
 ''' experiment folder (relative path) '''
-e_folder = '/home/jonata/evorobotpy2/rerun/incnoise-fixed/experiments'
+e_folder = '/home/jonata/evorobotpy2/minMaxAvg/experiments'
 
 '''how many seeds do you want to run for each experiment?'''
 number_of_seeds = 10
@@ -16,7 +16,7 @@ number_of_seeds = 10
 additional_params = ''
 
 '''how many experiments do you want to run simultaneously?'''
-simultaneously = 32
+simultaneously = 96
 
 '''seed initial number'''
 initial_seed_number = 1
@@ -41,7 +41,7 @@ for i in e_list:
             if '.ini' in f:
                 if not '.txt' in f:
                     ini_name = f
-        seed_command = 'python3 /home/jonata/evorobotpy2/rerun/incnoise-fixed/bin/es.py -f {}'.format(ini_name)
+        seed_command = 'python3 /home/jonata/evorobotpy2/minMaxAvg/bin/es.py -f {}'.format(ini_name)
         seed_command = seed_command + (' -s {} -n 1'.format(seed, additional_params))
         new_command = [find_folder,seed_command]
         print(new_command)

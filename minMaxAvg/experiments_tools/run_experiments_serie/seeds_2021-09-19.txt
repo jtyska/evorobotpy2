@@ -1,6 +1,0 @@
-python3 ../../bin/es.py -f HopperBulletEnv-v0-0.ini -s 1 -w 3
-python3 ../../bin/es.py -f HopperBulletEnv-v0-0.ini -s 2 -w 3
-python3 ../../bin/es.py -f HopperBulletEnv-v0-1.ini -s 1 -w 3
-python3 ../../bin/es.py -f HopperBulletEnv-v0-1.ini -s 2 -w 3
-python3 ../../bin/es.py -f HopperBulletEnv-v0-2.ini -s 1 -w 3
-python3 ../../bin/es.py -f HopperBulletEnv-v0-2.ini -s 2 -w 3

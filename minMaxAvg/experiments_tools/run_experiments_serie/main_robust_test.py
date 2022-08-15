@@ -7,7 +7,7 @@ import time
 '''setting variables'''
 
 ''' experiment folder (relative path) '''
-e_folder = '/home/jonata/evorobotpy2/rerun/env_var0.1/incnoise-fixed/experiments'
+e_folder = '/home/jonata/evorobotpy2/minMaxAvg/experiments'
 
 '''how many seeds do you want to run for each experiment?'''
 number_of_seeds = 10
