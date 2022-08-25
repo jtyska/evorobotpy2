@@ -41,6 +41,7 @@ class Algo(EvoAlgo):
             self.wdecay = 0
             self.symseed = 1
             self.saveeach = 60
+            self.percentual_env_var = 1            
             options = config.options("ALGO")
             for o in options:
                 found = 0
@@ -64,6 +65,9 @@ class Algo(EvoAlgo):
                     found = 1
                 if o == "saveeach":
                     self.saveeach = config.getint("ALGO","saveeach")
+                    found = 1                
+                if o == "percentual_env_var":
+                    self.percentual_env_var = config.getfloat("ALGO","percentual_env_var")
                     found = 1
 
                 if found == 0:
@@ -265,6 +269,11 @@ class Algo(EvoAlgo):
         print("Salimans: seed %d maxmsteps %d batchSize %d stepsize %lf noiseStdDev %lf wdecay %d symseed %d nparams %d" % (self.seed, self.maxsteps / 1000000, self.batchSize, self.stepsize, self.noiseStdDev, self.wdecay, self.symseed, self.nparams))
         self.defaultRandInitLow = self.policy.env.robot.randInitLow
         self.defaultRandInitHigh = self.policy.env.robot.randInitHigh
+
+        #applying the initial environmental variation        
+        self.policy.env.robot.randInitLow = self.defaultRandInitLow*self.percentual_env_var
+        self.policy.env.robot.randInitHigh = self.defaultRandInitHigh*self.percentual_env_var
+        print(f"####USING {self.percentual_env_var*100} of the default environmental variation - actual range = [{self.policy.env.robot.randInitLow},{self.policy.env.robot.randInitHigh}]")
 
         while (self.steps < self.maxsteps):
 
