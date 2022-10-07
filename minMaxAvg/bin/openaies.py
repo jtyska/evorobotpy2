@@ -41,7 +41,8 @@ class Algo(EvoAlgo):
             self.wdecay = 0
             self.symseed = 1
             self.saveeach = 60
-            self.percentual_env_var = 1            
+            self.percentual_env_var = 1  
+            self.weight_utilities_exp = None          
             options = config.options("ALGO")
             for o in options:
                 found = 0
@@ -68,6 +69,11 @@ class Algo(EvoAlgo):
                     found = 1                
                 if o == "percentual_env_var":
                     self.percentual_env_var = config.getfloat("ALGO","percentual_env_var")
+                    found = 1
+                if o == "weight_utilities_exp":
+                    self.weight_utilities_exp = config.getint("ALGO","weight_utilities_exp")
+                    if self.weight_utilities_exp < 0 or self.weight_utilities_exp%2==0:
+                        exit("ERROR: param weight_utilities_exp needs to be positive and odd")
                     found = 1
 
                 if found == 0:
@@ -226,6 +232,12 @@ class Algo(EvoAlgo):
             utilities[self.index[i]] = i
         utilities /= (popsize - 1)
         utilities -= 0.5
+
+        if self.weight_utilities_exp is not None:
+            #only odd values have to be used, the greater the value, the more intermediate values will be ignored
+            utilities= utilities**self.weight_utilities_exp
+            a = (a/np.max(a))/2 #this keeps the values between -0.5 to 0.5
+            print(a)
         
         weights = zeros(self.batchSize)                           # Assign the weights (utility) to samples on the basis of their fitness rank
         for i in range(self.batchSize):
