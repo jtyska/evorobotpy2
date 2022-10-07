@@ -236,8 +236,8 @@ class Algo(EvoAlgo):
         if self.weight_utilities_exp is not None:
             #only odd values have to be used, the greater the value, the more intermediate values will be ignored
             utilities= utilities**self.weight_utilities_exp
-            a = (a/np.max(a))/2 #this keeps the values between -0.5 to 0.5
-            print(a)
+            utilities = (utilities/np.max(utilities))/2 #this keeps the values between -0.5 to 0.5
+            print(utilities)
         
         weights = zeros(self.batchSize)                           # Assign the weights (utility) to samples on the basis of their fitness rank
         for i in range(self.batchSize):
