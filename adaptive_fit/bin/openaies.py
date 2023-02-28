@@ -338,7 +338,7 @@ class Algo(EvoAlgo):
                     mov_avg_values.append(last_gen_fitness.mean())
                     print(f"Moving average now (window size = {gen_window})= {mov_avg_values[-1]}")
                     if self.cgen>=2*gen_window and not fitModeChanged:
-                        improv_rate = (mov_avg_values[-1]-mov_avg_values[-2])/mov_avg_values[-2]
+                        improv_rate = (mov_avg_values[-1]-mov_avg_values[-2])/np.abs(mov_avg_values[-2])
                         print(f"Previous moving average (window size = {gen_window}) = {mov_avg_values[-2]}")
                         print(f"Improvement rate = {improv_rate}")
                         if improv_rate < improv_threshold:                            
